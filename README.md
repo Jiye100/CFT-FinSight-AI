@@ -10,4 +10,5 @@ Our product is an interactive chatbot that provides financial guidance to users 
 - Niti Goyal (TPM)
 - Jiye Baek (TPM)
 - Simran Duggi (SWE)
+- Kai Patragnoni (SWE)
   
