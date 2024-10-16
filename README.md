@@ -12,3 +12,4 @@ Our product is an interactive chatbot that provides financial guidance to users 
 - Simran Duggi (SWE)
 - Kai Patragnoni (SWE)
 - Dylan Dehnert (SWE)
+- Andrew Da (SWE)
