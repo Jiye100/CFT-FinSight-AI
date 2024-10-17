@@ -13,3 +13,4 @@ Our product is an interactive chatbot that provides financial guidance to users 
 - Kai Patragnoni (SWE)
 - Dylan Dehnert (SWE)
 - Andrew Da (SWE)
+- Jason Chen (SWE)
