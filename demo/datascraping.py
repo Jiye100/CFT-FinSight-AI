@@ -27,6 +27,7 @@ def get_articles(keyword):
     
     df = pd.DataFrame(articles)
     df = df[['title', 'author', 'description', 'url', 'publishedAt', 'content']]
+    print(df['title'])
 
     # Replace content column with scraped full text
     content = get_content(df['url'])
@@ -42,9 +43,8 @@ def store_to_db(df):
     conn = sqlite3.connect('data.db')
 
     # Store dataframe in database
-    # Right now, we replace the database with the new dataframe
-    df.to_sql('article', conn, if_exists='replace', index=False)
-
+    df.to_sql('article', conn, if_exists='append', index=False)
+    # print("Successfully stored in database!")
     # Commit and close the connection
     conn.commit()
     conn.close()
