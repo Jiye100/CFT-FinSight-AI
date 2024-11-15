@@ -15,19 +15,6 @@ BLUE = '\033[94m'
 ua = UserAgent()
 HEADERS = {'User-Agent': ua.random}
 
-df = pd.DataFrame(columns=["Source","URL", "Title", "Headlines", "Text Body"])
-
-#These BBC news article URLS are from articles.csv
-bbc_urls = [
-    "https://www.bbc.co.uk/news/articles/c5yrl1vgne9o",
-    "https://www.bbc.co.uk/news/articles/cje03dq2pyyo",
-    "https://www.bbc.co.uk/news/articles/c0j8w73pdn8o",
-    "https://www.bbc.co.uk/news/articles/c704wzx38p1o",
-    "https://www.bbc.co.uk/news/articles/cvglmv4lgx0o",
-    "https://www.bbc.co.uk/news/articles/cvg745ggn3no",
-    "https://www.bbc.co.uk/news/articles/cpvzypy8ndyo"
-]
-
 
 #Function to return the response of a webpage request, and retrying after some time if getting 429 errors
 def make_request(url, max_retries=10, base_delay=0.2, backoff_factor=2):
@@ -53,10 +40,9 @@ def make_request(url, max_retries=10, base_delay=0.2, backoff_factor=2):
 
 def visit_link(URL):
     """
-    Visits the URL link, parses the text, and adds
-    each section of text to the global dataframe "df"
+    Visits the URL link, parses the text, and returns a new 
+    row for the article
     """
-    global df
     response = make_request(URL)
     if response is None or response.status_code != 200:
         print(f"{RED}Error {response.status_code}. Not able to access {URL}{ENDC}")
@@ -69,19 +55,30 @@ def visit_link(URL):
     print(f"Downloading article text from article: {BLUE}{URL}{ENDC}.")
     new_row = {} #new row for the article that will be added to df
 
-    text_blocks = [p.get_text() for div in soup.find_all("div", {"data-component": "text-block"}) for p in div.find_all("p")]
+    text_blocks = [p.get_text() for div in soup.find_all("div", attrs={"data-component": "text-block"}) for p in div.find_all("p")]
     print(text_blocks)
+ 
     
     new_row["Source"] = "BBC"
     new_row["URL"] = URL
-    #new_row["Title"] =  #TODO Extract title of article
-    #new_row["Headlines"] = #TODO Extract headlines from article
+    title_block = soup.find('div', {'data-component': 'headline-block'})
+    title_tag = soup.find('h1', id='main-heading')
+    print("Printing the tag",title_tag)
+    title = title_tag.text if title_tag else None
+    # print(soup.find("article"))
+    print(title)
+    #title = title_block.find('h1').text if title_block else None
+    new_row["Title"] =  title
+    subheadline_blocks = soup.find_all('div', {'data-component': 'subheadline-block'})
+    subheadlines = [block.find('h2').text for block in subheadline_blocks if block.find('h2')]
+    new_row["Headlines"] = subheadlines
     new_row["Text Body"] = text_blocks
 
     #convert our new row from a dictionary to a dataframe
     new_row_df = pd.DataFrame([new_row])
+    return new_row_df
 
-    df = pd.concat([df, new_row_df], ignore_index=True)
+    
     # k=10
     # #Write saved articles to csv after scraping every k articles
     # if len(df)%k==0:
@@ -89,10 +86,36 @@ def visit_link(URL):
     #     df.to_csv(f"Articles/bbc_articles.csv")
     df.to_csv(f"Articles/bbc_articles.csv")
 
-#Main program
-print("Running program...")
+def scrape_samples():
+    """
+    Creates a csv file Articles/bbc_articles.csv containing the full content of a 
+    few articles, for RAG testing purposes
+    """
+    print("Scraping articles...")
+    #These BBC news article URLS are from articles.csv
+    bbc_urls = [
+        "https://www.bbc.co.uk/news/articles/c5yrl1vgne9o",
+        "https://www.bbc.co.uk/news/articles/cje03dq2pyyo",
+        "https://www.bbc.co.uk/news/articles/c0j8w73pdn8o",
+        "https://www.bbc.co.uk/news/articles/c704wzx38p1o",
+        "https://www.bbc.co.uk/news/articles/cvglmv4lgx0o",
+        "https://www.bbc.co.uk/news/articles/cvg745ggn3no",
+        "https://www.bbc.co.uk/news/articles/cpvzypy8ndyo"
+    ]
 
-for url in bbc_urls:
-    visit_link(url)
+    df = pd.DataFrame(columns=["Source","URL", "Title", "Headlines", "Text Body"])
+    for url in bbc_urls:
+        new_article_row = visit_link(url) #scrape the url and create a row for that article
+        if new_article_row is None:
+            print(f"{RED}Error getting content from {url}{ENDC}")
+            continue
+        print(new_article_row.columns)
+        new_article_row = new_article_row[df.columns]
+        print(new_article_row.columns)
+        df = pd.concat([df, new_article_row], ignore_index=True) #add that article to our dataframe
+    df.to_csv(f"Articles/bbc_articles.csv", index=False)
+    print(df.columns)
+    print("Saved BBC articles csv to Articles/bbc_articles.csv.")
 
-print("Finished running program.")
+if __name__ == "__main__":
+    scrape_samples()
