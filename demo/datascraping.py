@@ -15,6 +15,14 @@ import scrape_bbc_articles
 NEWS_API = '7c0e73b941f9483bb57f879cf9f551b9'
 URL = 'https://newsapi.org/v2/everything'
 
+# # Colors for printing debugging text
+# RED = '\033[91m'
+# GREEN = '\033[92m'
+# ENDC = '\033[0m'
+# BLUE = '\033[94m'
+# ua = UserAgent()
+# HEADERS = {'User-Agent': ua.random}
+
 def get_articles_using_newsapi(keyword):
     """
     Searches for BBC articles that related to "keyword" topics, 
@@ -43,11 +51,9 @@ def get_articles_using_newsapi(keyword):
     print(df.head())
     
     df = df[['title', 'author', 'description', 'url', 'publishedAt', 'content']]
-    print(df['title'])
 
     # Replace content column with scraped full text
-    content = get_content(df['url'])
-    df['content'] = content
+    df['content'] = [" ".join(visit_link(URL)) for URL in df['url']]
     return df
 
 def get_articles_using_rss(keyword):
