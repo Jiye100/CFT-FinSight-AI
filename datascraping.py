@@ -126,4 +126,4 @@ def retrieve_data():
 
     conn.close()
 
-    return content
+    return content 

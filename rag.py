@@ -48,7 +48,7 @@ def add_documents_to_chroma(documents, collection):
         documents (list): List of chunks (string)
         collection: Collection object that stores the documents
     """
-    collection.add(documents=documents, ids=[id for id in range(len(documents))])
+    collection.add(documents=documents, ids=[str(id) for id in range(len(documents))])
     # for doc in documents:
     #     collection.add(
     #         documents=[doc["content"]],
@@ -90,3 +90,4 @@ def generate_answer(prompt):
        str: A formatted response including generated text and sources 
     """
     # TODO
+    
