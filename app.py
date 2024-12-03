@@ -10,13 +10,10 @@ model = genai.GenerativeModel("gemini-1.5-flash")
 
 user_query = input("What can I help you with?\n")
 
-response = model.generate_content(f"Here is a client's finance-related question: {user_query}. What are some main topics I could filter by to search for relevant news articles? Keep your answer short. Make sure the format is keyword1 OR keyword2 OR keyword3 ...")
-
-data = response.to_dict()
-keyword = data['candidates'][0]['content']['parts'][0]['text']
+keyword = rag.generate_keyword(user_query)
 
 # df = datascraping.process_articles()
-# datascraping.store_to_db(pd.read_csv('articles.csv'))
+# datascraping.store_to_db(pd.read_csv('scraping/articles.csv'))
 
 document = datascraping.retrieve_data()
 

@@ -36,7 +36,7 @@ def process_articles():
     df = df[['title', 'url', 'content']]
 
     df['content'] = get_contents(df['url'])
-    df = df.explode("content", ignore_index=True)
+    # df = df.explode("content", ignore_index=True) Create row for each paragraph
     df.dropna(inplace=True)
     df.to_csv('articles.csv')
 
@@ -45,19 +45,18 @@ def process_articles():
 
 def store_to_db(df):
     # Connect to 'data.db'
-    df.dropna(inplace=True)
+    # df.dropna(inplace=True)
 
     conn = sqlite3.connect('data.db')
 
     cursor = conn.cursor()
-    table = """ CREATE TABLE IF NOT EXISTS paragraphs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+    table = """ CREATE TABLE IF NOT EXISTS articles (
             title TEXT NOT NULL,
             URL TEXT NOT NULL,
             content TEXT UNIQUE NOT NULL
         ); """
     cursor.execute(table)
-    insert_sql = """INSERT OR REPLACE INTO paragraphs (title, url, content)
+    insert_sql = """INSERT OR REPLACE INTO articles (title, URL, content)
     VALUES (?, ?, ?)
     """
     for _, row in df.iterrows():
@@ -96,21 +95,22 @@ def get_contents(URLs):
 
         html_content = response.text
         soup = BeautifulSoup(html_content, 'html.parser')
-
-        # Multiple extraction methods for robustness
-        text_blocks = []
         
+        text_blocks = [p.get_text() for div in soup.find_all("div", {"data-component": "text-block"}) for p in div.find_all("p")]
+        text = " ".join(text_blocks)
+        content.append(text)
+        # Add paragraphs instead of full article content -> commented out
         # Try specific div with data-component
-        specific_blocks = [p.get_text(strip=True) for div in soup.find_all("div", {"data-component": "text-block"}) for p in div.find_all("p")]
+        # specific_blocks = [p.get_text(strip=True) for div in soup.find_all("div", {"data-component": "text-block"}) for p in div.find_all("p")]
         
         # Fallback to main content areas
-        if not specific_blocks:
-            content_divs = soup.find_all(["div", "article"], class_=["content", "main-text", "article-body"])
-            paragraphs = [p.get_text(strip=True) for div in content_divs for p in div.find_all("p")]
-        else:
-            paragraphs = specific_blocks
+        # if not specific_blocks:
+        #     content_divs = soup.find_all(["div", "article"], class_=["content", "main-text", "article-body"])
+        #     paragraphs = [p.get_text(strip=True) for div in content_divs for p in div.find_all("p")]
+        # else:
+        #     paragraphs = specific_blocks
 
-        content.append(paragraphs)
+        # content.append(paragraphs)
 
     return content
 
