@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 
 #My API Key
-API_KEY = 'c94a528b1f1d4a8594f1a10db09f94b2'
+API_KEY = ''
 URL = 'https://newsapi.org/v2/everything'
 
 

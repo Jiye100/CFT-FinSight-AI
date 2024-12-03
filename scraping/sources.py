@@ -3,7 +3,7 @@ import csv
 
 url = ('https://newsapi.org/v2/top-headlines/sources?'
       'language=en&'
-      'apiKey=66652eff48894102a4d3dd225287ec18')
+      'apiKey')
       
 
 data = requests.get(url).json()
