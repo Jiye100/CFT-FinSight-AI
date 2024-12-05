@@ -30,7 +30,9 @@ def generate_keyword(query):
         str: A single string of keywords in a format of keyword1 OR keyword2 OR ...
     """
     model = genai.GenerativeModel("gemini-1.5-flash")
-    response = model.generate_content(f"Here is a client's finance-related question: {query}. What are some main topics I could filter by to search for relevant news articles? Keep your answer short. Make sure the format is keyword1 OR keyword2 OR keyword3 ...")
+    response = model.generate_content(
+        f"Here is a client's finance-related question: {query}. What are some main topics I could filter by to search for relevant news articles? Keep your answer short. Make sure the format is keyword1 OR keyword2 OR keyword3 ..."
+    )
 
     data = response.to_dict()
     keywords = data['candidates'][0]['content']['parts'][0]['text']
@@ -39,13 +41,55 @@ def generate_keyword(query):
 
 def split_text(documents):
     """
-    Split the text content of the given list of string into smaller chunks
-    Args:
-        documents (list): List of string containing text content of the articles
+    Split the text content of the given list of strings into smaller chunks.
+    The goal is to split on semantic boundaries (e.g., sentences, paragraphs)
+    and ensure that each chunk is of manageable size, so that embeddings
+    can capture meaningful context.
+
+    Strategy:
+    - For each document:
+      1. Split by sentences.
+      2. Accumulate sentences into chunks until a certain word count limit is reached.
+      3. If a chunk exceeds the limit, start a new chunk.
+
     Returns:
-        list: List of strings representing the split text chunks
+        list: List of strings representing the split text chunks.
     """
-    # TODO
+    # Maximum words per chunk (can be tuned)
+    MAX_WORDS = 100
+    
+    all_chunks = []
+    for doc in documents:
+        # Rough sentence splitting on periods. More sophisticated methods could be used (e.g., nltk)
+        sentences = doc.split('. ')
+        current_chunk = []
+        current_length = 0
+        
+        for sentence in sentences:
+            sentence = sentence.strip()
+            # Handle trailing periods:
+            if sentence.endswith('.'):
+                sentence = sentence[:-1].strip()
+            
+            words = sentence.split()
+            if not words:
+                continue
+            
+            # If adding this sentence would exceed the limit, start a new chunk
+            if current_length + len(words) > MAX_WORDS:
+                if current_chunk:
+                    all_chunks.append(' '.join(current_chunk))
+                current_chunk = words
+                current_length = len(words)
+            else:
+                current_chunk.extend(words)
+                current_length += len(words)
+        
+        # Add the last chunk if it exists
+        if current_chunk:
+            all_chunks.append(' '.join(current_chunk))
+
+    return all_chunks
 
 def create_chroma_db():
     """
@@ -68,13 +112,7 @@ def add_documents_to_chroma(documents, collection):
         documents (list): List of chunks (string)
         collection: Collection object that stores the documents
     """
-    collection.add(documents=documents, ids=[str(id) for id in range(len(documents))])
-    # for doc in documents:
-    #     collection.add(
-    #         documents=[doc["content"]],
-    #         metadatas=[{"section_name": doc["section_name"], "document_id": doc["id"]}],
-    #         ids=[doc["id"]]
-    #     )
+    collection.add(documents=documents, ids=[str(i) for i in range(len(documents))])
     print(f"Added {len(documents)} documents to Chroma.")
 
 def query_chroma(user_query, collection, k=2):
@@ -92,20 +130,33 @@ def query_chroma(user_query, collection, k=2):
 
 def make_rag_prompt(query, relevant_passage):
     """
-    Generate a RAG prompt which includes a concise role description, the user's query, and relevant data
+    Generate a RAG prompt which includes a concise role description, the user's query, and relevant data.
+
     Args:
         query (str): User's input query
         relevant_passage (list): List of strings where each string is a relevant article chunk
+
     Returns:
          str: A string for the complete prompt for RAG
     """
-    # TODO
+    passages = "\n\n".join(relevant_passage)
+    prompt = f"""You are an AI assistant specialized in finance-related inquiries. The user asked the following question:
+"{query}"
+
+Here are some relevant passages from external sources to help you answer the question:
+{passages}
+
+Please use the above context to provide a detailed and accurate answer to the user's query. If you refer to sources, call them "relevant external sources" without providing direct links."""
+    return prompt
 
 def generate_answer(query):
     """
-    Generate a response using Gemini on the given prompt
+    Generate a response using Gemini on the given prompt.
+    The prompt should already be RAG formatted, containing both the user's query and relevant context.
+
     Args:
-        prompt (str): A string for the complete prompt for RAG
+        query (str): A RAG-formatted prompt
+
     Returns:
        str: A formatted response including generated text and sources 
     """
@@ -116,5 +167,5 @@ def generate_answer(query):
     response = data['candidates'][0]['content']['parts'][0]['text']
     
     return response.strip()
-    
+
 print(generate_answer("hello"))
