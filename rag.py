@@ -91,6 +91,60 @@ def split_text(documents):
 
     return all_chunks
 
+def split_text_modified(documents):
+    """
+    Split the text content of the given list of strings into smaller chunks.
+    The goal is to split on semantic boundaries (e.g., sentences, paragraphs)
+    and ensure that each chunk is of manageable size, so that embeddings
+    can capture meaningful context.
+
+    Strategy:
+    - For each document:
+      1. Split by sentences.
+      2. Accumulate sentences into chunks until a certain word count limit is reached.
+      3. If a chunk exceeds the limit, start a new chunk.
+
+    Input: 
+        documents: List of lists, where each list is a list of sentences
+    Returns:
+        list: List of strings representing the split text chunks.
+    """
+    # Maximum words per chunk (can be tuned)
+    MAX_WORDS = 100
+    
+    all_chunks = []
+    for doc in documents:
+        # Rough sentence splitting on periods. More sophisticated methods could be used (e.g., nltk)
+        current_chunk = []
+        current_length = 0
+        
+        for sentence in doc:
+            sentence = sentence.strip()
+            # Handle trailing periods:
+            if sentence.endswith('.'):
+                sentence = sentence[:-1].strip()
+            
+            words = sentence.split()
+            if not words:
+                continue
+            
+            # If adding this sentence would exceed the limit, start a new chunk
+            if current_length + len(words) > MAX_WORDS:
+                if current_chunk:
+                    all_chunks.append(' '.join(current_chunk))
+                current_chunk = words
+                current_length = len(words)
+            else:
+                current_chunk.extend(words)
+                current_length += len(words)
+        
+        # Add the last chunk if it exists
+        if current_chunk:
+            all_chunks.append(' '.join(current_chunk))
+
+    return all_chunks
+
+
 def create_chroma_db():
     """
     Initializes a Chroma database client and creates a collection for storing documents
@@ -168,4 +222,4 @@ def generate_answer(query):
     
     return response.strip()
 
-print(generate_answer("hello"))
+#print(generate_answer("hello"))
