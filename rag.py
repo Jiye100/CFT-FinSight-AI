@@ -31,7 +31,7 @@ def generate_keyword(query):
     """
     model = genai.GenerativeModel("gemini-1.5-flash")
     response = model.generate_content(
-        f"Here is a client's finance-related question: {query}. What are some main topics I could filter by to search for relevant news articles? Keep your answer short. Make sure the format is keyword1 OR keyword2 OR keyword3 ..."
+        f"Here is a client's finance-related question: {query}. What are some main topics I could filter by to search for relevant news articles? Keep your answer short. Each keyword should be 1 word max. Make sure the format is keyword1 OR keyword2 OR keyword3 ..."
     )
 
     data = response.to_dict()
@@ -194,13 +194,13 @@ def make_rag_prompt(query, relevant_passage):
          str: A string for the complete prompt for RAG
     """
     passages = "\n\n".join(relevant_passage)
-    prompt = f"""You are an AI assistant specialized in finance-related inquiries. The user asked the following question:
+    prompt = f"""You are an AI assistant specialized in finance-related inquiries. I am asking you the following question:
 "{query}"
 
 Here are some relevant passages from external sources to help you answer the question:
 {passages}
 
-Please use the above context to provide a detailed and accurate answer to the user's query. If you refer to sources, call them "relevant external sources" without providing direct links."""
+Please use the above context to provide a detailed and accurate answer to my query. If you refer to sources, call them "relevant external sources" without providing direct links."""
     return prompt
 
 def generate_answer(query):
