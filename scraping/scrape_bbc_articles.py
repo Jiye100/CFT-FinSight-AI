@@ -18,7 +18,7 @@ HEADERS = {'User-Agent': ua.random}
 
 
 #Function to return the response of a webpage request, and retrying after some time if getting 429 errors
-def make_request(url, max_retries=10, base_delay=0.2, backoff_factor=2):
+def make_request(url, max_retries=10, base_delay=0.2, backoff_factor=2, verbose=True):
     retries = 0
     while retries < max_retries:
         time.sleep(base_delay)
@@ -32,7 +32,7 @@ def make_request(url, max_retries=10, base_delay=0.2, backoff_factor=2):
             time.sleep(delay_with_jitter)
             retries += 1
         elif response.status_code == 200:
-            print("Able to visit URL!")
+            #print("Able to visit URL!")
             return response
         else:
             print(f"{RED}{response.status_code} error. Not able to visit {url}{ENDC}")
@@ -44,7 +44,7 @@ def visit_link(URL):
     Visits the URL link, parses the text, and returns a new 
     row for the article
     """
-    response = make_request(URL)
+    response = make_request(URL, verbose=False)
     if response is None or response.status_code != 200:
         print(f"{RED}Error {response.status_code}. Not able to access {URL}{ENDC}")
         return
@@ -53,21 +53,21 @@ def visit_link(URL):
     html_content = response.text
     soup = BeautifulSoup(html_content, 'html.parser')
 
-    print(f"Downloading article text from article: {BLUE}{URL}{ENDC}.")
+    #print(f"Downloading article text from article: {BLUE}{URL}{ENDC}.")
     new_row = {} #new row for the article that will be added to df
 
     text_blocks = [p.get_text() for div in soup.find_all("div", attrs={"data-component": "text-block"}) for p in div.find_all("p")]
-    print(text_blocks)
+    #print(text_blocks)
  
     
     new_row["Source"] = "BBC"
     new_row["URL"] = URL
     title_block = soup.find('div', {'data-component': 'headline-block'})
     title_tag = soup.find('h1', id='main-heading')
-    print("Printing the tag",title_tag)
+    #print("Printing the tag",title_tag)
     title = title_tag.text if title_tag else None
     # print(soup.find("article"))
-    print(title)
+    #print(title)
     #title = title_block.find('h1').text if title_block else None
     new_row["Title"] =  title
     subheadline_blocks = soup.find_all('div', {'data-component': 'subheadline-block'})
@@ -89,7 +89,7 @@ def visit_link(URL):
 
 def scrape_samples():
     """
-    Creates a csv file Articles/bbc_articles.csv containing the full content of a 
+    Creates a csv file Articles/sample_bbc_articles.csv containing the full content of a 
     few articles, for RAG testing purposes
     """
     print("Scraping articles...")
@@ -110,13 +110,38 @@ def scrape_samples():
         if new_article_row is None:
             print(f"{RED}Error getting content from {url}{ENDC}")
             continue
-        print(new_article_row.columns)
+        #print(new_article_row.columns)
         new_article_row = new_article_row[df.columns]
-        print(new_article_row.columns)
+        #print(new_article_row.columns)
+        df = pd.concat([df, new_article_row], ignore_index=True) #add that article to our dataframe
+    df.to_csv(f"Articles/sample_bbc_articles.csv", index=False)
+    #print(df.columns)
+    #print("Saved BBC articles csv to Articles/sample_bbc_articles.csv.")
+
+def scrape_articles(bbc_urls):
+    """
+    Creates a csv file Articles/bbc_articles.csv containing the full content of a 
+    few articles, for RAG testing purposes
+
+    Input: urls: a list of BBC news article URLs to scrape
+    Output: Creates the file Articles/bbc_articles.csv containing scraped text bodies
+    """
+    #print("Scraping articles...")
+
+    df = pd.DataFrame(columns=["Source","URL", "Title", "Headlines", "Text Body"])
+    for url in bbc_urls:
+        new_article_row = visit_link(url) #scrape the url and create a row for that article
+        if new_article_row is None:
+            print(f"{RED}Error getting content from {url}{ENDC}")
+            continue
+        #print(new_article_row.columns)
+        new_article_row = new_article_row[df.columns]
+        #print(new_article_row.columns)
         df = pd.concat([df, new_article_row], ignore_index=True) #add that article to our dataframe
     df.to_csv(f"Articles/bbc_articles.csv", index=False)
-    print(df.columns)
-    print("Saved BBC articles csv to Articles/bbc_articles.csv.")
+    #print(df.columns)
+    #print("Saved BBC articles csv to Articles/bbc_articles.csv.")
+
 
 if __name__ == "__main__":
     scrape_samples()
