@@ -12,12 +12,19 @@ NEWS_API = '7c0e73b941f9483bb57f879cf9f551b9'
 URL = 'https://newsapi.org/v2/everything'
 
 def get_articles_using_newsapi(keyword):
+    """
+    Searches for BBC articles that related to "keyword" topics, 
+    scrapes their content, and returns a dataframe with these articles
+    "keyword" must be a string that satisfies the requirements at:
+    (see https://newsapi.org/docs/endpoints/everythinghttps://newsapi.org/docs/endpoints/everything )
+    """
     params = {
         'q': keyword,
-        'pageSize': 100,
+        'pageSize': 20,
         'apiKey': NEWS_API,
         'language': 'en',
-        'from': date.today() - timedelta(days=30)
+        'from': date.today() - timedelta(days=30),
+        'sources': 'bbc-news'
     }
 
     request_response = requests.get(URL, params = params)
@@ -35,13 +42,13 @@ def process_articles():
     df = pd.DataFrame(articles_json)
     df = df[['title', 'url', 'content']]
 
-    df['content'] = get_contents(df['url'])
+    #df['content'] = get_contents(df['url'])
     # df = df.explode("content", ignore_index=True) Create row for each paragraph
     df.dropna(inplace=True)
     df.to_csv('articles.csv')
 
     store_to_db(df)
-    # print(df.head())
+    #print(df.head())
 
 def store_to_db(df):
     # Connect to 'data.db'
@@ -80,7 +87,7 @@ def make_request(URL, max_retries = 10, base_delay = 0.2, backoff_factor = 2):
             time.sleep(delay_with_jitter)
             retries += 1
         else:
-            print("Able to visit URL!")
+            #print("Able to visit URL!")
             return response
         
     return response
