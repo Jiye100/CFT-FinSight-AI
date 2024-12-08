@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 import time
 import pandas as pd
+import random
 
 ##After running this program the resulting file structure will look like:
 
