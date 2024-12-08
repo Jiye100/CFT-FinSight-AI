@@ -53,7 +53,7 @@ def get_articles_using_newsapi(keyword):
     df = df[['title', 'author', 'description', 'url', 'publishedAt', 'content']]
 
     # Replace content column with scraped full text
-    df['content'] = [" ".join(visit_link(URL)) for URL in df['url']]
+    #df['content'] = [" ".join(visit_link(URL)) for URL in df['url']]
     return df
 
 def get_articles_using_rss(keyword):
